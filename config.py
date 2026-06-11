@@ -41,9 +41,10 @@ EXPECTED_COLUMNS = [
     "rpe",
 ]
 
-# ── Supabase (used in Phase 3) ───────────────────────
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+# ── Database ─────────────────────────────────────────
+# Full PostgreSQL connection string from Supabase
+# Format: postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 # ── Logging ──────────────────────────────────────────
 
