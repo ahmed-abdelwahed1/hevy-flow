@@ -1,0 +1,14 @@
+name: hevy-flow
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pandas=2.2.*
+  - psycopg2=2.9.*
+  - python-dotenv=1.1.*
+  - pip
+  - pip:
+      - supabase==2.*
+      - streamlit==1.45.*
+      - plotly==6.*
