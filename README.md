@@ -1,4 +1,4 @@
-# Hevy-Flow 🏋️‍♂️📊
+# Hevy Flow 
 
 An end-to-end **Data Engineering ETL pipeline** that extracts workout logs from the [Hevy](https://www.hevyapp.com/) fitness tracking app, transforms and cleans the raw data, loads it into a **Supabase (PostgreSQL)** database, and presents insights through an interactive **Streamlit** dashboard.
 
@@ -6,9 +6,9 @@ An end-to-end **Data Engineering ETL pipeline** that extracts workout logs from 
 
 ```mermaid
 graph LR
-    A["📥 Phase 1<br/>Extract CSV"] --> B["🔧 Phase 2<br/>Transform & Clean"]
-    B --> C["📤 Phase 3<br/>Load to Supabase"]
-    C --> D["📊 Phase 4<br/>Streamlit Dashboard"]
+    A["Phase 1<br/>Extract CSV"] --> B["Phase 2<br/>Transform & Clean"]
+    B --> C["Phase 3<br/>Load to Supabase"]
+    C --> D["Phase 4<br/>Streamlit Dashboard"]
 
     style A fill:#4CAF50,color:#fff,stroke:#388E3C,stroke-width:2px
     style B fill:#2196F3,color:#fff,stroke:#1976D2,stroke-width:2px
