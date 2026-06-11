@@ -4,14 +4,16 @@ An end-to-end **Data Engineering ETL pipeline** that extracts workout logs from 
 
 ## Architecture
 
-```
-┌─────────────┐      ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│  EXTRACT    │      │  TRANSFORM   │      │    LOAD      │      │  VISUALIZE   │
-│             │─────▶│              │─────▶│              │─────▶│              │
-│  CSV file   │      │  Clean &     │      │  Supabase    │      │  Streamlit   │
-│  (Hevy      │      │  normalize   │      │  (PostgreSQL)│      │  Dashboard   │
-│   export)   │      │  data        │      │              │      │              │
-└─────────────┘      └──────────────┘      └──────────────┘      └──────────────┘
+```mermaid
+graph LR
+    A["📥 Phase 1<br/>Extract CSV"] --> B["🔧 Phase 2<br/>Transform & Clean"]
+    B --> C["📤 Phase 3<br/>Load to Supabase"]
+    C --> D["📊 Phase 4<br/>Streamlit Dashboard"]
+
+    style A fill:#4CAF50,color:#fff,stroke:#388E3C,stroke-width:2px
+    style B fill:#2196F3,color:#fff,stroke:#1976D2,stroke-width:2px
+    style C fill:#FF9800,color:#fff,stroke:#F57C00,stroke-width:2px
+    style D fill:#9C27B0,color:#fff,stroke:#7B1FA2,stroke-width:2px
 ```
 
 ## Tech Stack
@@ -70,6 +72,12 @@ cp .env.example .env
 python main.py
 ```
 
+### Launching the Dashboard
+
+```bash
+streamlit run dashboard.py
+```
+
 ## Project Structure
 
 ```
@@ -81,6 +89,7 @@ hevy-flow/
 │   ├── extract.py            # Phase 1: CSV extraction & validation
 │   ├── transform.py          # Phase 2: Cleaning & transformations
 │   └── load.py               # Phase 3: Supabase loader
+├── dashboard.py              # Phase 4: Streamlit analytics dashboard
 ├── config.py                 # Centralized configuration
 ├── main.py                   # Pipeline entry point
 ├── environment.yml           # Conda environment
@@ -92,9 +101,9 @@ hevy-flow/
 ## Pipeline Phases
 
 - [x] **Phase 1 — Extract**: Read CSV, validate schema, profile data quality
-- [ ] **Phase 2 — Transform**: Parse datetimes, handle nulls, derive columns, normalize
-- [ ] **Phase 3 — Load**: Create Supabase tables, upsert cleaned data
-- [ ] **Phase 4 — Visualize**: Streamlit dashboard with interactive charts
+- [x] **Phase 2 — Transform**: Parse datetimes, handle nulls, derive columns, normalize
+- [x] **Phase 3 — Load**: Create Supabase tables, upsert cleaned data
+- [x] **Phase 4 — Visualize**: Streamlit dashboard with interactive charts
 
 ## License
 
