@@ -506,13 +506,9 @@ def render_rpe_analysis(sets: pd.DataFrame) -> None:
         **PLOTLY_LAYOUT,
         title=dict(text="Average RPE per Session", font=dict(size=14)),
         yaxis_title="RPE",
-        yaxis=dict(
-            range=[5, 10],
-            gridcolor="rgba(99,102,241,0.1)",
-            zeroline=False,
-        ),
         height=320,
     )
+    fig.update_yaxes(range=[5, 10])
     st.plotly_chart(fig, use_container_width=True)
 
 
