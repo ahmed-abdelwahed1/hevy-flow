@@ -11,6 +11,7 @@ import time
 
 from config import setup_logging
 from etl.extract import extract_workouts
+from etl.transform import transform_workouts
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +34,14 @@ def main() -> None:
             "Extraction complete — %d rows ready for transformation", len(df_raw)
         )
 
-        # ── Phase 2: Transform (coming soon) ─────────
-        logger.info("Phase 2/3: TRANSFORM — not yet implemented")
-        # df_clean = transform_workouts(df_raw)
+        # ── Phase 2: Transform ───────────────────────
+        logger.info("Phase 2/3: TRANSFORM")
+        df_clean = transform_workouts(df_raw)
+        logger.info(
+            "Transformation complete — %d rows, %d columns",
+            len(df_clean),
+            len(df_clean.columns),
+        )
 
         # ── Phase 3: Load (coming soon) ──────────────
         logger.info("Phase 3/3: LOAD — not yet implemented")
