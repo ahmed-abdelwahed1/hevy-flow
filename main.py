@@ -12,6 +12,7 @@ import time
 from config import setup_logging
 from etl.extract import extract_workouts
 from etl.transform import transform_workouts
+from etl.load import load_to_supabase
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +44,9 @@ def main() -> None:
             len(df_clean.columns),
         )
 
-        # ── Phase 3: Load (coming soon) ──────────────
-        logger.info("Phase 3/3: LOAD — not yet implemented")
-        # load_to_supabase(df_clean)
+        # ── Phase 3: Load ────────────────────────────
+        logger.info("Phase 3/3: LOAD")
+        load_to_supabase(df_clean)
 
     except FileNotFoundError as exc:
         logger.error("Pipeline failed — %s", exc)
