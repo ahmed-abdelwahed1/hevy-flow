@@ -69,6 +69,15 @@ st.markdown(
         background: linear-gradient(180deg, {SLATE_950} 0%, #0B1120 50%, {SLATE_950} 100%);
     }}
 
+    /* Hide Streamlit header (navbar) and footer */
+    header[data-testid="stHeader"] {{
+        display: none !important;
+    }}
+    footer[data-testid="stFooter"] {{
+        display: none !important;
+    }}
+
+
     /* ── Sidebar ────────────────────────── */
     section[data-testid="stSidebar"] {{
         background: linear-gradient(180deg, #080E1A 0%, #0D1525 100%);
