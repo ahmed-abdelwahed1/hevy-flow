@@ -565,10 +565,22 @@ def render_strength(sets, exercise):
             marker=dict(size=5, color=c),
             hovertemplate="%{x|%b %d, %Y}<br><b>%{y:.1f} kg</b><extra></extra>",
         ))
+    st.caption(subtitle)
 
     fig.update_layout(
-        **PLOTLY_LAYOUT, height=380, yaxis_title="Max Weight (kg)",
-        title=dict(text=subtitle, font=dict(size=13, color=SLATE_300)),
+        **PLOTLY_LAYOUT, height=400, yaxis_title="Max Weight (kg)",
+    )
+    fig.update_layout(
+        margin=dict(l=48, r=16, t=60, b=44),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+            font=dict(size=10, color=SLATE_400),
+            bgcolor="rgba(0,0,0,0)",
+        ),
     )
     st.plotly_chart(fig, use_container_width=True)
 
