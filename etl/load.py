@@ -88,28 +88,37 @@ VALUES %s;
 """
 
 
-def load_to_supabase(df: pd.DataFrame) -> None:
+def load_to_supabase(df: pd.DataFrame, incremental: bool = False) -> dict:
     """Load the cleaned DataFrame into Supabase PostgreSQL.
 
     Creates a normalized schema with two tables:
 
-    - ``workouts``: one row per workout session (119 rows)
-    - ``workout_sets``: one row per exercise set (2,628 rows)
-
-    The load is **idempotent**: workouts are upserted by ``workout_id``,
-    and sets are cleared and re-inserted for each load to avoid duplicates.
+    - ``workouts``: one row per workout session
+    - ``workout_sets``: one row per exercise set
 
     Parameters
     ----------
     df : pd.DataFrame
         Cleaned DataFrame from the transform phase.
+    incremental : bool
+        If ``True``, only insert workout sessions that don't already
+        exist in the database (based on ``workout_id``).  When ``False``
+        (default), all sets are truncated and re-inserted.
+
+    Returns
+    -------
+    dict
+        Load statistics: ``total_rows``, ``new_workouts``, ``new_sets``,
+        ``skipped_workouts``.
 
     Raises
     ------
     ConnectionError
         If the database connection cannot be established.
     """
-    logger.info("Starting load phase")
+    logger.info("Starting load phase (mode=%s)", "incremental" if incremental else "full")
+
+    stats = {"total_rows": len(df), "new_workouts": 0, "new_sets": 0, "skipped_workouts": 0}
 
     if not DATABASE_URL:
         raise ConnectionError(
@@ -128,16 +137,48 @@ def load_to_supabase(df: pd.DataFrame) -> None:
             _create_tables(cur)
             conn.commit()
 
-            # ── 3. Prepare data ──────────────────────
+            # ── 3. Filter to new data (incremental) ──
+            if incremental:
+                existing_ids = _get_existing_workout_ids(cur)
+                all_ids = set(df["workout_id"].unique())
+                new_ids = all_ids - existing_ids
+                skipped = all_ids - new_ids
+
+                stats["skipped_workouts"] = len(skipped)
+
+                if not new_ids:
+                    logger.info(
+                        "No new workouts found — all %d sessions already in database",
+                        len(all_ids),
+                    )
+                    stats["new_workouts"] = 0
+                    stats["new_sets"] = 0
+                    return stats
+
+                df = df[df["workout_id"].isin(new_ids)]
+                logger.info(
+                    "Incremental: %d new sessions, %d already exist → loading %d sets",
+                    len(new_ids), len(skipped), len(df),
+                )
+
+            # ── 4. Prepare data ──────────────────────
             df_workouts = _prepare_workouts_df(df)
             df_sets = _prepare_sets_df(df)
 
-            # ── 4. Load workouts (upsert) ────────────
+            stats["new_workouts"] = len(df_workouts)
+            stats["new_sets"] = len(df_sets)
+
+            # ── 5. Load workouts (upsert) ────────────
             _load_workouts(cur, df_workouts)
             conn.commit()
 
-            # ── 5. Load sets (clear + insert) ────────
-            _load_sets(cur, df_sets)
+            # ── 6. Load sets ─────────────────────────
+            if incremental:
+                # Only insert new sets (no truncate)
+                _insert_sets(cur, df_sets)
+            else:
+                # Full refresh: truncate + re-insert
+                _load_sets(cur, df_sets)
             conn.commit()
 
         logger.info("Load phase complete")
@@ -148,6 +189,8 @@ def load_to_supabase(df: pd.DataFrame) -> None:
         if conn:
             conn.close()
             logger.info("Database connection closed")
+
+    return stats
 
 
 # ── Internal helpers ─────────────────────────────────
@@ -160,6 +203,14 @@ def _create_tables(cur) -> None:
     cur.execute(CREATE_SETS_INDEX)
     cur.execute(CREATE_EXERCISE_INDEX)
     logger.info("Tables and indexes created (or already exist)")
+
+
+def _get_existing_workout_ids(cur) -> set:
+    """Query the database for all existing workout_ids."""
+    cur.execute("SELECT workout_id FROM workouts")
+    ids = {row[0] for row in cur.fetchall()}
+    logger.info("Found %d existing workout sessions in database", len(ids))
+    return ids
 
 
 def _prepare_workouts_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -270,3 +321,25 @@ def _load_sets(cur, df_sets: pd.DataFrame) -> None:
     execute_values(cur, INSERT_SETS, values, page_size=500)
     logger.info("Inserted %d workout sets", len(values))
 
+
+def _insert_sets(cur, df_sets: pd.DataFrame) -> None:
+    """Insert new sets without clearing existing data (incremental mode)."""
+    values = [
+        (
+            row.workout_id,
+            row.exercise_title,
+            _safe_int(row.superset_id),
+            int(row.set_index),
+            row.set_type,
+            float(row.weight_kg),
+            int(row.reps),
+            int(row.duration_seconds),
+            _safe_float(row.rpe),
+            bool(row.is_bodyweight),
+            bool(row.is_timed),
+        )
+        for row in df_sets.itertuples(index=False)
+    ]
+
+    execute_values(cur, INSERT_SETS, values, page_size=500)
+    logger.info("Inserted %d new workout sets (incremental)", len(values))
