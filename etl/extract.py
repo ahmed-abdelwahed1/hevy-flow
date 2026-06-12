@@ -16,13 +16,17 @@ from config import EXPECTED_COLUMNS, RAW_DATA_PATH
 logger = logging.getLogger(__name__)
 
 
-def extract_workouts(filepath: Path = RAW_DATA_PATH) -> pd.DataFrame:
+def extract_workouts(filepath: Path = RAW_DATA_PATH, uploaded_file=None) -> pd.DataFrame:
     """Read the raw Hevy CSV export and validate its schema.
 
     Parameters
     ----------
     filepath : Path
-        Absolute or relative path to the CSV file.
+        Absolute or relative path to the CSV file.  Used when
+        ``uploaded_file`` is *not* provided.
+    uploaded_file : file-like, optional
+        A file-like object (e.g. ``BytesIO`` from Streamlit's
+        ``file_uploader``).  When provided, ``filepath`` is ignored.
 
     Returns
     -------
@@ -32,25 +36,27 @@ def extract_workouts(filepath: Path = RAW_DATA_PATH) -> pd.DataFrame:
     Raises
     ------
     FileNotFoundError
-        If the CSV file does not exist at the given path.
+        If no ``uploaded_file`` is given and the CSV does not exist.
     ValueError
         If required columns are missing from the CSV.
     """
-    # ── 1. Validate file existence ───────────────────
     logger.info("Starting extraction phase")
-    logger.info("Source file: %s", filepath)
 
-    if not filepath.exists():
-        raise FileNotFoundError(f"Data file not found: {filepath}")
+    # ── 1. Read CSV ──────────────────────────────────
+    if uploaded_file is not None:
+        logger.info("Source: uploaded file (%s)", getattr(uploaded_file, "name", "stream"))
+        df = pd.read_csv(uploaded_file)
+    else:
+        logger.info("Source file: %s", filepath)
+        if not filepath.exists():
+            raise FileNotFoundError(f"Data file not found: {filepath}")
+        file_size_kb = filepath.stat().st_size / 1024
+        logger.info("File size: %.1f KB", file_size_kb)
+        df = pd.read_csv(filepath)
 
-    file_size_kb = filepath.stat().st_size / 1024
-    logger.info("File size: %.1f KB", file_size_kb)
-
-    # ── 2. Read CSV ──────────────────────────────────
-    df = pd.read_csv(filepath)
     logger.info("Loaded %d rows × %d columns", len(df), len(df.columns))
 
-    # ── 3. Schema validation ─────────────────────────
+    # ── 2. Schema validation ─────────────────────────
     actual_columns = list(df.columns)
     missing = set(EXPECTED_COLUMNS) - set(actual_columns)
     extra = set(actual_columns) - set(EXPECTED_COLUMNS)
@@ -63,7 +69,7 @@ def extract_workouts(filepath: Path = RAW_DATA_PATH) -> pd.DataFrame:
 
     logger.info("Schema validation passed — all %d expected columns present", len(EXPECTED_COLUMNS))
 
-    # ── 4. Profile the data ──────────────────────────
+    # ── 3. Profile the data ──────────────────────────
     _log_data_profile(df)
 
     return df
