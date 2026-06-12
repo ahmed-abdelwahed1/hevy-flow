@@ -1,9 +1,39 @@
-# Hevy Flow 
+<div align="center">
+  <h1>🏋️ Hevy Flow</h1>
 
-An end-to-end **Data Engineering ETL pipeline** that extracts workout logs from the [Hevy](https://www.hevyapp.com/) fitness tracking app, transforms and cleans the raw data, loads it into a **Supabase (PostgreSQL)** database, and presents insights through an interactive **Streamlit** dashboard.
+  <p><strong>An end-to-end Data Engineering ETL pipeline for Hevy workout logs.</strong></p>
 
-## Architecture
+  ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+  ![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white)
+  ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+  ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+  ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)
+  ![Plotly](https://img.shields.io/badge/Plotly-%233F4F75.svg?style=for-the-badge&logo=plotly&logoColor=white)
 
+</div>
+
+<br/>
+
+Extracts workout logs from the [Hevy](https://www.hevyapp.com/) fitness tracking app, transforms and cleans the raw data, loads it into a **Supabase (PostgreSQL)** database, and presents insights through an interactive **Streamlit** dashboard.
+
+---
+
+## 🛠️ Tech Stack
+
+**Core Libraries & Tools:**
+* **Language:** Python 3.12
+* **Environment:** Conda (`environment.yml`)
+* **Data Processing:** `pandas` for ETL transformations
+* **Database:** Supabase (PostgreSQL)
+* **DB Adapter:** `psycopg2-binary`
+* **Visualization:** Streamlit & Plotly Express/Graph Objects
+* **Config Management:** `python-dotenv`
+
+---
+
+## 🏗️ Architecture
+
+### High-Level Flow
 ```mermaid
 graph LR
     A["Phase 1<br/>Extract CSV"] --> B["Phase 2<br/>Transform & Clean"]
@@ -15,9 +45,9 @@ graph LR
     style C fill:#FF9800,color:#fff,stroke:#F57C00,stroke-width:2px
     style D fill:#9C27B0,color:#fff,stroke:#7B1FA2,stroke-width:2px
 ```
+---
 
 ### Detailed Pipeline Flow
-
 ```mermaid
 flowchart TD
 
@@ -90,81 +120,9 @@ class node_config_py,node_env_example,node_environment_yml,node_pandas,node_psyc
 class node_workouts_csv,node_supabase_db toneRose
 ```
 
-## Tech Stack
+## 📂 Project Structure
 
-<div align="center">
-
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)
-![Plotly](https://img.shields.io/badge/Plotly-%233F4F75.svg?style=for-the-badge&logo=plotly&logoColor=white)
-
-</div>
-
-**Core Libraries & Tools:**
-* **Language:** Python 3.12
-* **Environment:** Conda (`environment.yml`)
-* **Data Processing:** `pandas` for ETL transformations
-* **Database:** Supabase (PostgreSQL)
-* **DB Adapter:** `psycopg2-binary`
-* **Visualization:** Streamlit & Plotly Express/Graph Objects
-* **Config Management:** `python-dotenv`
-
-## Dataset
-
-The pipeline processes a Hevy app export (`data/workouts.csv`) containing **2,628 set-level records** spanning **~2 years** (Jul 2024 – Jun 2026) across **14 columns**:
-
-| Column | Description |
-|---|---|
-| `title` | Workout session name (e.g., PUSH, PULL, LEGS) |
-| `start_time` / `end_time` | Session timestamps (text → parsed to datetime) |
-| `exercise_title` | Exercise name |
-| `set_index` | Set number within an exercise (0-indexed) |
-| `weight_kg` | Weight in kg (null for bodyweight exercises) |
-| `reps` | Repetitions performed |
-| `rpe` | Rate of Perceived Exertion (6–10 scale) |
-| `distance_km` / `duration_seconds` | For cardio/timed exercises |
-
-## Setup
-
-### Prerequisites
-
-- [Conda](https://docs.conda.io/en/latest/miniconda.html) (Miniconda or Anaconda)
-- A [Supabase](https://supabase.com/) project (free tier works)
-
-### Installation
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/your-username/hevy-flow.git
-cd hevy-flow
-
-# 2. Create and activate the Conda environment
-conda env create -f environment.yml
-conda activate hevy-flow
-
-# 3. Configure environment variables
-cp .env.example .env
-# Edit .env with your Supabase credentials
-```
-
-### Running the Pipeline
-
-```bash
-python main.py
-```
-
-### Launching the Dashboard
-
-```bash
-streamlit run dashboard.py
-```
-
-## Project Structure
-
-```
+```text
 hevy-flow/
 ├── data/
 │   └── workouts.csv          # Raw Hevy export
@@ -182,3 +140,39 @@ hevy-flow/
 └── README.md
 ```
 
+---
+
+## 💻 Setup & Usage
+
+### 1. Prerequisites
+
+- [Conda](https://docs.conda.io/en/latest/miniconda.html) (Miniconda or Anaconda)
+- A [Supabase](https://supabase.com/) project (free tier works)
+
+### 2. Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/hevy-flow.git
+cd hevy-flow
+
+# Create and activate the Conda environment
+conda env create -f environment.yml
+conda activate hevy-flow
+
+# Configure environment variables
+cp .env.example .env
+# Edit .env with your Supabase credentials
+```
+
+### 3. Running the Data Pipeline
+
+```bash
+python main.py
+```
+
+### 4. Launching the Dashboard
+
+```bash
+streamlit run dashboard.py
+```
