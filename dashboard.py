@@ -12,6 +12,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import psycopg2
 from config import DATABASE_URL
+from etl.extract import extract_workouts
+from etl.transform import transform_workouts
+from etl.load import load_to_supabase
 
 # ── Page Config ──────────────────────────────────────
 
@@ -304,6 +307,14 @@ def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
 # ── Sidebar ──────────────────────────────────────────
 
 
+def _run_incremental_pipeline(uploaded_file) -> dict:
+    """Run the ETL pipeline on an uploaded CSV in incremental mode."""
+    df_raw = extract_workouts(uploaded_file=uploaded_file)
+    df_clean = transform_workouts(df_raw)
+    stats = load_to_supabase(df_clean, incremental=True)
+    return stats
+
+
 def render_sidebar(workouts, sets):
     """Render sidebar filters and return filtered data."""
     with st.sidebar:
@@ -312,6 +323,36 @@ def render_sidebar(workouts, sets):
             '<div class="sidebar-tagline">Workout Analytics Dashboard</div>',
             unsafe_allow_html=True,
         )
+        st.divider()
+
+        # ── CSV Upload ───────────────────────────
+        st.markdown('<div class="sidebar-section">📤 Upload Workout Log</div>', unsafe_allow_html=True)
+        uploaded = st.file_uploader(
+            "Upload Hevy CSV",
+            type=["csv"],
+            label_visibility="collapsed",
+            help="Export your workouts from the Hevy app and upload the CSV here.",
+        )
+        if uploaded is not None:
+            if st.button("⚡ Run Pipeline", use_container_width=True, type="primary"):
+                with st.spinner("Running Extract → Transform → Load ..."):
+                    try:
+                        stats = _run_incremental_pipeline(uploaded)
+                        if stats["new_workouts"] > 0:
+                            st.success(
+                                f"✅ Loaded **{stats['new_workouts']}** new sessions "
+                                f"({stats['new_sets']:,} sets)"
+                            )
+                        else:
+                            st.info("All sessions already in database — nothing new to load.")
+                        if stats["skipped_workouts"] > 0:
+                            st.caption(f"{stats['skipped_workouts']} existing sessions skipped")
+                        # Clear cache so charts refresh
+                        load_data.clear()
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(f"Pipeline failed: {exc}")
+
         st.divider()
 
         # Date range
