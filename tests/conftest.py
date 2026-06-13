@@ -6,11 +6,20 @@ import pytest
 @pytest.fixture
 def sample_raw_df():
     """Returns a mock raw DataFrame simulating the CSV extracted from Hevy."""
-    return pd.DataFrame({
-        "title": ["Legs", "Push", "Push"],
-        "start_time": ["May 25, 2024, 06:00 PM", "May 26, 2024, 10:00 AM", "May 26, 2024, 10:00 AM"],
-        "end_time": ["May 25, 2024, 07:30 PM", "May 26, 2024, 11:15 AM", "May 26, 2024, 11:15 AM"],
-        "description": ["Leg day!", np.nan, np.nan],
+    return pd.DataFrame(
+        {
+            "title": ["Legs", "Push", "Push"],
+            "start_time": [
+                "May 25, 2024, 06:00 PM",
+                "May 26, 2024, 10:00 AM",
+                "May 26, 2024, 10:00 AM",
+            ],
+            "end_time": [
+                "May 25, 2024, 07:30 PM",
+                "May 26, 2024, 11:15 AM",
+                "May 26, 2024, 11:15 AM",
+            ],
+            "description": ["Leg day!", np.nan, np.nan],
             "exercise_title": ["Squat (Barbell)", "Bench Press", "Push Up"],
             "superset_id": [np.nan, np.nan, np.nan],
             "exercise_notes": [np.nan, np.nan, np.nan],
