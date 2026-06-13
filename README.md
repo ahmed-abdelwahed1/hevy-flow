@@ -51,61 +51,68 @@ graph LR
 ```mermaid
 flowchart TD
 
-subgraph group_group_etl["ETL Pipeline"]
-  node_main_py["main.py<br/>etl entrypoint<br/>[main.py]"]
-  node_extract_py["Extract<br/>csv ingest<br/>[extract.py]"]
-  node_transform_py["Transform<br/>cleaning logic<br/>[transform.py]"]
-  node_load_py["Load<br/>db writer<br/>[load.py]"]
+subgraph group_g_raw["Raw data"]
+  node_n_raw_csv["workouts.csv<br/>csv export<br/>[workouts.csv]"]
 end
 
-subgraph group_group_analytics["Analytics App"]
-  node_dashboard_py["dashboard.py<br/>analytics ui<br/>[dashboard.py]"]
-  node_streamlit(("Streamlit<br/>ui framework"))
-  node_plotly(("Plotly<br/>charting"))
+subgraph group_g_etl["ETL pipeline"]
+  node_n_main["main<br/>etl orchestrator<br/>[main.py]"]
+  node_n_extract["extract<br/>csv ingest<br/>[extract.py]"]
+  node_n_transform["transform<br/>data shaping<br/>[transform.py]"]
+  node_n_load["load<br/>db writer<br/>[load.py]"]
+  node_n_pandas(("pandas<br/>dataframe library"))
+  node_n_supabase[("Supabase<br/>warehouse")]
 end
 
-subgraph group_group_config["Config & Runtime"]
-  node_config_py["config.py<br/>settings<br/>[config.py]"]
-  node_env_example[".env.example<br/>env template<br/>[.env.example]"]
-  node_environment_yml["environment.yml<br/>conda env<br/>[environment.yml]"]
-  node_pandas(("Pandas<br/>dataframe lib"))
-  node_psycopg2(("psycopg2<br/>db adapter"))
-  node_dotenv(("python-dotenv<br/>env loader"))
+subgraph group_g_app["Analytics UI"]
+  node_n_dashboard["dashboard<br/>streamlit app<br/>[dashboard.py]"]
+  node_n_streamlit(("Streamlit<br/>ui runtime"))
+  node_n_plotly(("Plotly<br/>charting"))
 end
 
-subgraph group_group_storage["Data Store"]
-  node_workouts_csv["workouts.csv<br/>raw export<br/>[workouts.csv]"]
-  node_supabase_db[("Supabase<br/>postgres warehouse")]
+subgraph group_g_ops["Ops & config"]
+  node_n_config["config<br/>[config.py]"]
+  node_n_dotenv(("dotenv<br/>env loader"))
+  node_n_env["environment.yml<br/>conda env<br/>[environment.yml]"]
+  node_n_ci["CI workflow<br/>automation<br/>[ci.yml]"]
+  node_n_tests["tests<br/>test suite"]
 end
 
-node_main_py -->|"runs"| node_extract_py
-node_main_py -->|"runs"| node_transform_py
-node_main_py -->|"runs"| node_load_py
-node_extract_py -->|"reads"| node_workouts_csv
-node_extract_py -->|"uses"| node_pandas
-node_transform_py -->|"uses"| node_pandas
-node_transform_py -->|"consumes"| node_extract_py
-node_load_py -->|"writes"| node_supabase_db
-node_load_py -->|"uses"| node_psycopg2
-node_dashboard_py -->|"reads"| node_supabase_db
-node_dashboard_py -->|"uses"| node_streamlit
-node_dashboard_py -->|"uses"| node_plotly
-node_config_py -->|"documents"| node_env_example
-node_config_py -->|"loads"| node_dotenv
-node_main_py -->|"configures"| node_config_py
-node_dashboard_py -->|"configures"| node_config_py
-node_environment_yml -->|"pins"| node_pandas
-node_environment_yml -->|"pins"| node_psycopg2
+node_n_raw_csv -->|"ingests"| node_n_extract
+node_n_main -.->|"runs"| node_n_extract
+node_n_main -.->|"runs"| node_n_transform
+node_n_main -.->|"runs"| node_n_load
+node_n_extract -->|"uses"| node_n_pandas
+node_n_extract -->|"passes data"| node_n_transform
+node_n_transform -->|"uses"| node_n_pandas
+node_n_transform -->|"produces"| node_n_load
+node_n_load -->|"writes"| node_n_supabase
+node_n_dashboard -->|"reads"| node_n_supabase
+node_n_dashboard -->|"built on"| node_n_streamlit
+node_n_dashboard -->|"charts with"| node_n_plotly
+node_n_config -.->|"configures"| node_n_extract
+node_n_config -.->|"configures"| node_n_load
+node_n_config -.->|"configures"| node_n_dashboard
+node_n_dotenv -->|"loads"| node_n_config
+node_n_env -.->|"includes"| node_n_pandas
+node_n_env -.->|"includes"| node_n_streamlit
+node_n_ci -.->|"runs"| node_n_tests
+node_n_ci -.->|"checks"| node_n_main
+node_n_ci -.->|"checks"| node_n_dashboard
+node_n_tests -.->|"covers"| node_n_extract
+node_n_tests -.->|"covers"| node_n_transform
+node_n_tests -.->|"covers"| node_n_load
+node_n_tests -.->|"covers"| node_n_main
 
-click node_main_py "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/main.py"
-click node_extract_py "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/etl/extract.py"
-click node_transform_py "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/etl/transform.py"
-click node_load_py "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/etl/load.py"
-click node_workouts_csv "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/data/workouts.csv"
-click node_dashboard_py "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/dashboard.py"
-click node_config_py "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/config.py"
-click node_env_example "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/.env.example"
-click node_environment_yml "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/environment.yml"
+click node_n_raw_csv "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/data/workouts.csv"
+click node_n_main "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/main.py"
+click node_n_extract "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/etl/extract.py"
+click node_n_transform "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/etl/transform.py"
+click node_n_load "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/etl/load.py"
+click node_n_dashboard "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/dashboard.py"
+click node_n_config "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/config.py"
+click node_n_env "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/environment.yml"
+click node_n_ci "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/.github/workflows/ci.yml"
 
 classDef toneNeutral fill:#f8fafc,stroke:#334155,stroke-width:1.5px,color:#0f172a
 classDef toneBlue fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#172554
@@ -114,10 +121,10 @@ classDef toneMint fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
 classDef toneRose fill:#ffe4e6,stroke:#e11d48,stroke-width:1.5px,color:#881337
 classDef toneIndigo fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81
 classDef toneTeal fill:#ccfbf1,stroke:#0f766e,stroke-width:1.5px,color:#134e4a
-class node_main_py,node_extract_py,node_transform_py,node_load_py toneBlue
-class node_dashboard_py,node_streamlit,node_plotly toneAmber
-class node_config_py,node_env_example,node_environment_yml,node_pandas,node_psycopg2,node_dotenv toneMint
-class node_workouts_csv,node_supabase_db toneRose
+class node_n_raw_csv toneBlue
+class node_n_main,node_n_extract,node_n_transform,node_n_load,node_n_pandas,node_n_supabase toneAmber
+class node_n_dashboard,node_n_streamlit,node_n_plotly toneMint
+class node_n_config,node_n_dotenv,node_n_env,node_n_ci,node_n_tests toneRose
 ```
 
 ## 📂 Project Structure
