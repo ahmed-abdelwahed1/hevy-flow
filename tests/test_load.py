@@ -20,7 +20,7 @@ def test_load_to_supabase_full_refresh(mocker, sample_clean_df):
 
     # In full refresh, we should see TRUNCATE
     assert any("TRUNCATE TABLE workout_sets" in call for call in calls)
-    
+
     # Verify execute_values was called for upserting
     assert mock_execute_values.called
 

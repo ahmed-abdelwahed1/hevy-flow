@@ -2,8 +2,8 @@ from io import BytesIO
 
 import pandas as pd
 import pytest
-from config import EXPECTED_COLUMNS
 
+from config import EXPECTED_COLUMNS
 from etl.extract import extract_workouts
 
 
