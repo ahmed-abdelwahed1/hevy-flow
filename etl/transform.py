@@ -97,18 +97,14 @@ def _add_derived_time_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Compute workout duration and calendar attributes from timestamps."""
     df = df.copy()
 
-    df["duration_minutes"] = (
-        (df["end_time"] - df["start_time"]).dt.total_seconds() / 60
-    ).round(1)
+    df["duration_minutes"] = ((df["end_time"] - df["start_time"]).dt.total_seconds() / 60).round(1)
 
     df["day_of_week"] = df["start_time"].dt.day_name()
     df["month"] = df["start_time"].dt.month
     df["year"] = df["start_time"].dt.year
     df["date"] = df["start_time"].dt.date
 
-    logger.info(
-        "Added derived columns: duration_minutes, day_of_week, month, year, date"
-    )
+    logger.info("Added derived columns: duration_minutes, day_of_week, month, year, date")
     return df
 
 

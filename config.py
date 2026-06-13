@@ -48,6 +48,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 # ── Logging ──────────────────────────────────────────
 
+
 def setup_logging(level: int = logging.INFO) -> None:
     """Configure logging to both console and a rotating log file.
 

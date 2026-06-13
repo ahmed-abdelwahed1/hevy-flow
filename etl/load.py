@@ -158,7 +158,9 @@ def load_to_supabase(df: pd.DataFrame, incremental: bool = False) -> dict:
                 df = df[df["workout_id"].isin(new_ids)]
                 logger.info(
                     "Incremental: %d new sessions, %d already exist → loading %d sets",
-                    len(new_ids), len(skipped), len(df),
+                    len(new_ids),
+                    len(skipped),
+                    len(df),
                 )
 
             # ── 4. Prepare data ──────────────────────

@@ -11,8 +11,8 @@ import time
 
 from config import setup_logging
 from etl.extract import extract_workouts
-from etl.transform import transform_workouts
 from etl.load import load_to_supabase
+from etl.transform import transform_workouts
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +31,7 @@ def main() -> None:
         # ── Phase 1: Extract ─────────────────────────
         logger.info("Phase 1/3: EXTRACT")
         df_raw = extract_workouts()
-        logger.info(
-            "Extraction complete — %d rows ready for transformation", len(df_raw)
-        )
+        logger.info("Extraction complete — %d rows ready for transformation", len(df_raw))
 
         # ── Phase 2: Transform ───────────────────────
         logger.info("Phase 2/3: TRANSFORM")
