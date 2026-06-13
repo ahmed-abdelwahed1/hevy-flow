@@ -20,7 +20,6 @@ from etl.load import load_to_supabase
 
 st.set_page_config(
     page_title="Hevy Flow | Workout Analytics",
-    page_icon="🏋️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -335,7 +334,7 @@ def render_sidebar(workouts, sets):
         st.divider()
 
         # ── CSV Upload ───────────────────────────
-        st.markdown('<div class="sidebar-section">📤 Upload Workout Log</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-section">Upload Workout Log</div>', unsafe_allow_html=True)
         uploaded = st.file_uploader(
             "Upload Hevy CSV",
             type=["csv"],
@@ -343,13 +342,13 @@ def render_sidebar(workouts, sets):
             help="Export your workouts from the Hevy app and upload the CSV here.",
         )
         if uploaded is not None:
-            if st.button("⚡ Run Pipeline", use_container_width=True, type="primary"):
+            if st.button("Run Pipeline", use_container_width=True, type="primary"):
                 with st.spinner("Running Extract → Transform → Load ..."):
                     try:
                         stats = _run_incremental_pipeline(uploaded)
                         if stats["new_workouts"] > 0:
                             st.success(
-                                f"✅ Loaded **{stats['new_workouts']}** new sessions "
+                                f"Loaded **{stats['new_workouts']}** new sessions "
                                 f"({stats['new_sets']:,} sets)"
                             )
                         else:
@@ -365,7 +364,7 @@ def render_sidebar(workouts, sets):
         st.divider()
 
         # Date range
-        st.markdown('<div class="sidebar-section">📅 Date Range</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-section">Date Range</div>', unsafe_allow_html=True)
         min_date = workouts["date"].min().date()
         max_date = workouts["date"].max().date()
         date_range = st.date_input(
@@ -385,7 +384,7 @@ def render_sidebar(workouts, sets):
         st.divider()
 
         # Category
-        st.markdown('<div class="sidebar-section">🏷️ Category</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-section">Category</div>', unsafe_allow_html=True)
         cats = sorted(workouts["workout_category"].unique())
         selected_cats = st.multiselect("cats", cats, default=cats, label_visibility="collapsed")
         workouts = workouts[workouts["workout_category"].isin(selected_cats)]
@@ -394,7 +393,7 @@ def render_sidebar(workouts, sets):
         st.divider()
 
         # Exercise
-        st.markdown('<div class="sidebar-section">💪 Exercise</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-section">Exercise</div>', unsafe_allow_html=True)
         exercises = sorted(sets["exercise_title"].unique()) if not sets.empty else []
         selected_ex = st.selectbox(
             "exercise",
@@ -444,7 +443,7 @@ def render_kpis(workouts, sets):
 
 def render_frequency(workouts):
     """Weekly workout frequency."""
-    section("📈 Workout Frequency")
+    section("Workout Frequency")
 
     weekly = (
         workouts.set_index("date")
@@ -470,7 +469,7 @@ def render_frequency(workouts):
 
 def render_category_split(workouts, sets):
     """Category donut + volume breakdown."""
-    section("🏷️ Workout Distribution")
+    section("Workout Distribution")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -518,7 +517,7 @@ def render_category_split(workouts, sets):
 
 def render_volume_timeline(sets):
     """Stacked volume per session over time."""
-    section("🔥 Volume Over Time")
+    section("Volume Over Time")
 
     vol = sets.copy()
     vol["volume"] = vol["weight_kg"] * vol["reps"]
@@ -541,7 +540,7 @@ def render_volume_timeline(sets):
 
 def render_strength(sets, exercise):
     """Strength progression chart."""
-    section("📊 Strength Progression")
+    section("Strength Progression")
 
     if exercise == "All Exercises":
         top = (
@@ -671,9 +670,9 @@ def render_top_exercises(sets):
         hovertemplate="%{y}<br><b>%{x} sets</b><br>Avg: %{customdata:.1f} kg<extra></extra>",
         customdata=top["avg_weight"],
     ))
+    st.caption("Top 10 Exercises")
     fig.update_layout(
         **PLOTLY_LAYOUT, height=400, xaxis_title="Total Sets",
-        title=dict(text="Top 10 Exercises", font=dict(size=13, color=SLATE_300)),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -702,9 +701,22 @@ def render_duration(workouts):
             hovertemplate="%{x|%b %d}<br><b>Avg: %{y:.0f} min</b><extra></extra>",
         ))
 
+    st.caption("Session Duration")
+
     fig.update_layout(
         **PLOTLY_LAYOUT, height=400, yaxis_title="Minutes",
-        title=dict(text="Session Duration", font=dict(size=13, color=SLATE_300)),
+    )
+    fig.update_layout(
+        margin=dict(l=48, r=16, t=60, b=44),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+            font=dict(size=10, color=SLATE_400),
+            bgcolor="rgba(0,0,0,0)",
+        ),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -716,7 +728,7 @@ def main():
     try:
         workouts_raw, sets_raw = load_data()
     except Exception as e:
-        st.error(f"❌ Database connection failed: {e}")
+        st.error(f"Database connection failed: {e}")
         st.info("Ensure `.env` contains a valid `DATABASE_URL`. Run `python main.py` first.")
         return
 
@@ -728,7 +740,7 @@ def main():
 
     # Header
     st.markdown(
-        '<div class="dash-header">🏋️ Hevy<span> Flow</span></div>'
+        '<div class="dash-header">Hevy<span> Flow</span></div>'
         '<div class="dash-subtitle">Extract → Transform → Load → Visualize &nbsp;·&nbsp; '
         "Your workout data, engineered</div>",
         unsafe_allow_html=True,
