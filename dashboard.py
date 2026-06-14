@@ -21,6 +21,7 @@ from etl.transform import transform_workouts
 
 st.set_page_config(
     page_title="Hevy Flow | Workout Analytics",
+    page_icon="assets/icon.svg",
     layout="wide",
     initial_sidebar_state="expanded",
 )
