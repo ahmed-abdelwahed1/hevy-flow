@@ -79,11 +79,27 @@ def transform_workouts(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _parse_datetimes(df: pd.DataFrame) -> pd.DataFrame:
-    """Convert ``start_time`` and ``end_time`` from text to datetime."""
+    """Convert ``start_time`` and ``end_time`` from text to datetime.
+
+    Auto-detects the source format:
+    - Already datetime (from a prior step) → no-op.
+    - ISO 8601 strings (API) → ``pd.to_datetime(utc=True)``.
+    - CSV-format strings → ``pd.to_datetime(format=DATETIME_FORMAT)``.
+    """
     df = df.copy()
 
-    df["start_time"] = pd.to_datetime(df["start_time"], format=DATETIME_FORMAT)
-    df["end_time"] = pd.to_datetime(df["end_time"], format=DATETIME_FORMAT)
+    for col in ("start_time", "end_time"):
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            logger.info("%s already datetime — skipping parse", col)
+            continue
+
+        # Try ISO 8601 first (API path), fall back to CSV format
+        try:
+            df[col] = pd.to_datetime(df[col], utc=True)
+            logger.info("Parsed %s as ISO 8601", col)
+        except (ValueError, TypeError):
+            df[col] = pd.to_datetime(df[col], format=DATETIME_FORMAT)
+            logger.info("Parsed %s using CSV format (%s)", col, DATETIME_FORMAT)
 
     logger.info(
         "Parsed datetimes — range: %s to %s",
@@ -111,10 +127,18 @@ def _add_derived_time_columns(df: pd.DataFrame) -> pd.DataFrame:
 def _generate_workout_ids(df: pd.DataFrame) -> pd.DataFrame:
     """Create a deterministic ``workout_id`` for each unique session.
 
-    A workout session is uniquely identified by its ``title`` +
-    ``start_time`` combination.  We hash that pair into a short,
-    reproducible 8-character hex ID.
+    When the API path is used, ``workout_id`` is already populated with
+    Hevy's canonical UUID during flattening — in that case this step is
+    skipped.  For CSV imports the hash is still generated.
     """
+    if "workout_id" in df.columns and df["workout_id"].notna().all():
+        unique_sessions = df["workout_id"].nunique()
+        logger.info(
+            "workout_id already present (API path) — %d unique sessions",
+            unique_sessions,
+        )
+        return df
+
     df = df.copy()
 
     def _hash_session(row: pd.Series) -> str:
@@ -124,7 +148,7 @@ def _generate_workout_ids(df: pd.DataFrame) -> pd.DataFrame:
     df["workout_id"] = df.apply(_hash_session, axis=1)
 
     unique_sessions = df["workout_id"].nunique()
-    logger.info("Generated workout_id — %d unique sessions", unique_sessions)
+    logger.info("Generated workout_id — %d unique sessions (CSV path)", unique_sessions)
     return df
 
 
@@ -204,12 +228,27 @@ def _normalize_titles(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _drop_empty_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Drop columns that are 100% null or carry no information."""
-    cols_to_drop = ["description", "exercise_notes", "distance_km"]
-    existing = [c for c in cols_to_drop if c in df.columns]
+    """Drop columns that are >95% null or carry no useful information.
 
-    df = df.drop(columns=existing)
-    logger.info("Dropped empty columns: %s", existing)
+    Defensively checks column existence and null percentage rather than
+    hardcoding names, so both API and CSV paths work safely.
+    """
+    candidates = ["description", "exercise_notes", "distance_km"]
+    to_drop: list[str] = []
+
+    for col in candidates:
+        if col not in df.columns:
+            continue
+        null_pct = df[col].isna().sum() / len(df) if len(df) > 0 else 1.0
+        if null_pct >= 0.95:
+            to_drop.append(col)
+
+    if to_drop:
+        df = df.drop(columns=to_drop)
+        logger.info("Dropped empty columns (≥95%% null): %s", to_drop)
+    else:
+        logger.info("No columns dropped — all candidates have data")
+
     return df
 
 
