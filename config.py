@@ -46,7 +46,7 @@ EXPECTED_COLUMNS = [
 # Get your key at: https://hevy.com/settings?developer  (Hevy Pro required)
 HEVY_API_KEY = os.getenv("HEVY_API_KEY", "")
 HEVY_API_BASE_URL = "https://api.hevyapp.com"
-HEVY_API_PAGE_SIZE = 10   # API maximum per page
+HEVY_API_PAGE_SIZE = 10  # API maximum per page
 HEVY_API_REQUEST_DELAY = 0.5  # seconds between paginated requests
 
 # ── Database ─────────────────────────────────────────

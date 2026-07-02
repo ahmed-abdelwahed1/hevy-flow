@@ -9,7 +9,7 @@ workflow to track the last successful pull timestamp.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 import psycopg2
@@ -229,9 +229,7 @@ def _migrate_workout_id_column(cur) -> None:
     """
     for table in ("workout_sets", "workouts"):
         try:
-            cur.execute(
-                f"ALTER TABLE {table} ALTER COLUMN workout_id TYPE VARCHAR(36);"
-            )
+            cur.execute(f"ALTER TABLE {table} ALTER COLUMN workout_id TYPE VARCHAR(36);")
             logger.info("Migrated %s.workout_id to VARCHAR(36)", table)
         except psycopg2.errors.DuplicateObject:  # noqa: E722
             # Column is already the target type
@@ -390,14 +388,12 @@ def get_last_sync(cur) -> datetime | None:
 
     Returns ``None`` if the key does not exist (first-ever run).
     """
-    cur.execute(
-        "SELECT value FROM sync_metadata WHERE key = 'last_sync_at'"
-    )
+    cur.execute("SELECT value FROM sync_metadata WHERE key = 'last_sync_at'")
     row = cur.fetchone()
     if row is None:
         logger.info("No last_sync_at found — first run")
         return None
-    ts = datetime.fromisoformat(row[0]).replace(tzinfo=timezone.utc)
+    ts = datetime.fromisoformat(row[0]).replace(tzinfo=UTC)
     logger.info("Last sync timestamp: %s", ts.isoformat())
     return ts
 

@@ -11,7 +11,6 @@ from etl.extract import (
     extract_workouts,
 )
 
-
 # ── CSV path tests (existing, preserved) ─────────────
 
 

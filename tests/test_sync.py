@@ -1,7 +1,7 @@
 """Tests for the incremental sync orchestrator (etl/sync.py)."""
 
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
@@ -28,7 +28,7 @@ def test_incremental_sync_no_events(_mock_db_and_api, mocker):
     mock_conn, mock_cursor = _mock_db_and_api
 
     mocker.patch("etl.sync._create_tables")
-    mocker.patch("etl.sync.get_last_sync", return_value=datetime(2024, 6, 1, tzinfo=timezone.utc))
+    mocker.patch("etl.sync.get_last_sync", return_value=datetime(2024, 6, 1, tzinfo=UTC))
     mocker.patch("etl.sync.set_last_sync")
 
     # Mock API client that returns no events

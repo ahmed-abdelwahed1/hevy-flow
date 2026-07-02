@@ -9,7 +9,7 @@ CI / GitHub Actions (where the filesystem is ephemeral).
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import psycopg2
 
@@ -30,7 +30,7 @@ from etl.transform import transform_workouts
 logger = logging.getLogger(__name__)
 
 # Epoch used as the "since" value when no prior sync has occurred.
-_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+_EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 
 
 def run_incremental_sync() -> dict:
@@ -108,7 +108,7 @@ def run_incremental_sync() -> dict:
                 )
 
             # ── 6. Persist sync timestamp ────────
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             set_last_sync(cur, now)
             conn.commit()
 

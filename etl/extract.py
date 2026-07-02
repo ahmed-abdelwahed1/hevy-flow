@@ -13,7 +13,7 @@ mode based on the arguments it receives.
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -116,9 +116,7 @@ class HevyAPIClient:
         logger.info("Total workouts fetched: %d", len(workouts))
         return workouts
 
-    def fetch_workout_events(
-        self, since: datetime
-    ) -> tuple[list[dict], list[str]]:
+    def fetch_workout_events(self, since: datetime) -> tuple[list[dict], list[str]]:
         """Fetch workout events (updates + deletes) since *since*.
 
         Returns
@@ -189,9 +187,7 @@ class HevyAPIClient:
                 resp = self.session.get(url, params=params, timeout=30)
 
                 if resp.status_code == 429:
-                    retry_after = int(
-                        resp.headers.get("Retry-After", 2**attempt)
-                    )
+                    retry_after = int(resp.headers.get("Retry-After", 2**attempt))
                     logger.warning(
                         "Rate limited (429). Retry-After: %ds (attempt %d/%d)",
                         retry_after,
@@ -230,9 +226,7 @@ class HevyAPIClient:
                 )
                 time.sleep(wait)
 
-        raise HevyAPIError(
-            0, f"All {self.max_retries} retries exhausted: {last_exc}"
-        )
+        raise HevyAPIError(0, f"All {self.max_retries} retries exhausted: {last_exc}")
 
 
 # ── Flattener ────────────────────────────────────────
@@ -263,11 +257,7 @@ def _flatten_api_workouts(workouts: list[dict]) -> pd.DataFrame:
             sets = exercise.get("sets", [])
             for s in sets:
                 distance_meters = s.get("distance_meters")
-                distance_km = (
-                    distance_meters / 1000.0
-                    if distance_meters is not None
-                    else None
-                )
+                distance_km = distance_meters / 1000.0 if distance_meters is not None else None
 
                 rows.append(
                     {
@@ -323,9 +313,7 @@ def _flatten_api_workouts(workouts: list[dict]) -> pd.DataFrame:
 # ── CSV Extraction (legacy / dashboard fallback) ─────
 
 
-def _extract_from_csv(
-    filepath: Path = RAW_DATA_PATH, uploaded_file=None
-) -> pd.DataFrame:
+def _extract_from_csv(filepath: Path = RAW_DATA_PATH, uploaded_file=None) -> pd.DataFrame:
     """Read the raw Hevy CSV export and validate its schema.
 
     Parameters
@@ -387,9 +375,7 @@ def _extract_from_csv(
 # ── Public entry point ───────────────────────────────
 
 
-def extract_workouts(
-    filepath: Path = RAW_DATA_PATH, uploaded_file=None
-) -> pd.DataFrame:
+def extract_workouts(filepath: Path = RAW_DATA_PATH, uploaded_file=None) -> pd.DataFrame:
     """Extract workout data from the Hevy API or a CSV file.
 
     When ``uploaded_file`` is provided the CSV path is used (dashboard
@@ -419,9 +405,7 @@ def extract_workouts(
         workouts = client.fetch_all_workouts()
         df = _flatten_api_workouts(workouts)
 
-    logger.info(
-        "Extraction complete — %d rows × %d columns", len(df), len(df.columns)
-    )
+    logger.info("Extraction complete — %d rows × %d columns", len(df), len(df.columns))
     _log_data_profile(df)
     return df
 
