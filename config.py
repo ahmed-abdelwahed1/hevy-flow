@@ -2,7 +2,8 @@
 Centralized configuration for the Hevy-Flow ETL pipeline.
 
 All paths, constants, and shared settings live here so that every module
-imports from a single source of truth.
+imports from a single source of truth.  Supports both the Hevy REST API
+(primary) and CSV-file import (dashboard fallback).
 """
 
 import logging
@@ -40,6 +41,13 @@ EXPECTED_COLUMNS = [
     "duration_seconds",
     "rpe",
 ]
+
+# ── Hevy API ─────────────────────────────────────────
+# Get your key at: https://hevy.com/settings?developer  (Hevy Pro required)
+HEVY_API_KEY = os.getenv("HEVY_API_KEY", "")
+HEVY_API_BASE_URL = "https://api.hevyapp.com"
+HEVY_API_PAGE_SIZE = 10   # API maximum per page
+HEVY_API_REQUEST_DELAY = 0.5  # seconds between paginated requests
 
 # ── Database ─────────────────────────────────────────
 # Full PostgreSQL connection string from Supabase

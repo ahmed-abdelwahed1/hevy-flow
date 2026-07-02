@@ -42,13 +42,21 @@ SLATE_300 = "#CBD5E1"
 SLATE_400 = "#94A3B8"
 SLATE_900 = "#0F172A"
 SLATE_950 = "#020617"
+BG_GRADIENT_MID = "#0B1120"
+SIDEBAR_GRAD_START = "#080E1A"
+SIDEBAR_GRAD_END = "#0D1525"
+METRIC_BG_START = "rgba(15, 23, 42, 0.8)"
+METRIC_BG_END = "rgba(13, 21, 37, 0.9)"
+METRIC_BORDER = "rgba(45, 212, 191, 0.12)"
+GRID_COLOR = "rgba(45, 212, 191, 0.05)"
+METRIC_SHADOW = "0 8px 32px rgba(0, 0, 0, 0.3)"
 
 CATEGORY_COLORS = {
-    "Push": "#FB7185",
-    "Pull": "#22D3EE",
-    "Legs": "#34D399",
-    "Upper": "#A78BFA",
-    "Lower": "#FBBF24",
+    "Push": ROSE,
+    "Pull": CYAN,
+    "Legs": EMERALD,
+    "Upper": VIOLET,
+    "Lower": AMBER,
     "Full Body": "#FB923C",
 }
 
@@ -67,7 +75,7 @@ st.markdown(
     }}
 
     .stApp {{
-        background: linear-gradient(180deg, {SLATE_950} 0%, #0B1120 50%, {SLATE_950} 100%);
+        background: linear-gradient(180deg, {SLATE_950} 0%, {BG_GRADIENT_MID} 50%, {SLATE_950} 100%);
     }}
 
     /* Hide Streamlit header (navbar) and footer */
@@ -81,8 +89,8 @@ st.markdown(
 
     /* ── Sidebar ────────────────────────── */
     section[data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, #080E1A 0%, #0D1525 100%);
-        border-right: 1px solid rgba(45, 212, 191, 0.08);
+        background: linear-gradient(180deg, {SIDEBAR_GRAD_START} 0%, {SIDEBAR_GRAD_END} 100%);
+        border-right: 1px solid {TEAL_DIM};
     }}
 
     section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {{
@@ -91,20 +99,17 @@ st.markdown(
 
     /* ── KPI Cards ──────────────────────── */
     div[data-testid="stMetric"] {{
-        background: linear-gradient(145deg, rgba(15, 23, 42, 0.8) 0%, rgba(13, 21, 37, 0.9) 100%);
-        border: 1px solid rgba(45, 212, 191, 0.12);
+        background: linear-gradient(145deg, {METRIC_BG_START} 0%, {METRIC_BG_END} 100%);
+        border: 1px solid {METRIC_BORDER};
         border-radius: 16px;
         padding: 20px 24px;
         backdrop-filter: blur(12px);
-        box-shadow:
-            0 0 0 1px rgba(45, 212, 191, 0.04),
-            0 8px 32px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        box-shadow: {METRIC_SHADOW};
         transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }}
 
     div[data-testid="stMetric"]:hover {{
-        border-color: rgba(45, 212, 191, 0.3);
+        border-color: {TEAL_GLOW};
         box-shadow:
             0 0 0 1px rgba(45, 212, 191, 0.08),
             0 8px 32px rgba(0, 0, 0, 0.3),
@@ -177,8 +182,8 @@ st.markdown(
     }}
 
     .sidebar-stat {{
-        background: rgba(45, 212, 191, 0.06);
-        border: 1px solid rgba(45, 212, 191, 0.1);
+        background: {TEAL_DIM};
+        border: 1px solid {METRIC_BORDER};
         border-radius: 10px;
         padding: 10px 14px;
         margin-top: 12px;
@@ -192,7 +197,7 @@ st.markdown(
 
     /* ── Dividers ────────────────────────── */
     hr {{
-        border-color: rgba(45, 212, 191, 0.06) !important;
+        border-color: {TEAL_DIM} !important;
         margin: 1.5rem 0 !important;
     }}
 
@@ -222,7 +227,8 @@ st.markdown(
     /* ── Footer ──────────────────────────── */
     .dash-footer {{
         text-align: center;
-        color: rgba(148, 163, 184, 0.4);
+        color: {SLATE_400};
+        opacity: 0.5;
         font-size: 0.72rem;
         letter-spacing: 0.3px;
         padding: 20px 0 10px;
@@ -241,12 +247,12 @@ PLOTLY_LAYOUT = dict(
     font=dict(family="Inter, sans-serif", color=SLATE_400, size=11),
     margin=dict(l=48, r=16, t=44, b=44),
     xaxis=dict(
-        gridcolor="rgba(45, 212, 191, 0.05)",
+        gridcolor=GRID_COLOR,
         zeroline=False,
         tickfont=dict(size=10),
     ),
     yaxis=dict(
-        gridcolor="rgba(45, 212, 191, 0.05)",
+        gridcolor=GRID_COLOR,
         zeroline=False,
         tickfont=dict(size=10),
     ),
