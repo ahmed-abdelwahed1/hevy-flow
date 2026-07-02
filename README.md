@@ -14,7 +14,7 @@
 
 <br/>
 
-Extracts workout logs from the [Hevy](https://www.hevyapp.com/) fitness tracking app, transforms and cleans the raw data, loads it into a **Supabase (PostgreSQL)** database, and presents insights through an interactive **Streamlit** dashboard.
+Extracts workout logs directly from the [Hevy](https://www.hevyapp.com/) REST API (or CSV export), transforms and cleans the raw data, loads it into a **Supabase (PostgreSQL)** database, and presents insights through an interactive **Streamlit** dashboard. Includes daily automated incremental syncing via **GitHub Actions**.
 
 ---
 
@@ -36,7 +36,7 @@ Extracts workout logs from the [Hevy](https://www.hevyapp.com/) fitness tracking
 ### High-Level Flow
 ```mermaid
 graph LR
-    A["Phase 1<br/>Extract CSV"] --> B["Phase 2<br/>Transform & Clean"]
+    A["Phase 1<br/>Extract API / CSV"] --> B["Phase 2<br/>Transform & Clean"]
     B --> C["Phase 3<br/>Load to Supabase"]
     C --> D["Phase 4<br/>Streamlit Dashboard"]
 
@@ -52,12 +52,12 @@ graph LR
 flowchart TD
 
 subgraph group_g_raw["Raw data"]
-  node_n_raw_csv["workouts.csv<br/>csv export<br/>[workouts.csv]"]
+  node_n_raw_csv["Hevy API / CSV<br/>data source<br/>[api/csv]"]
 end
 
 subgraph group_g_etl["ETL pipeline"]
   node_n_main["main<br/>etl orchestrator<br/>[main.py]"]
-  node_n_extract["extract<br/>csv ingest<br/>[extract.py]"]
+  node_n_extract["extract<br/>api/csv ingest<br/>[extract.py]"]
   node_n_transform["transform<br/>data shaping<br/>[transform.py]"]
   node_n_load["load<br/>db writer<br/>[load.py]"]
   node_n_pandas(("pandas<br/>dataframe library"))
@@ -131,12 +131,16 @@ class node_n_config,node_n_dotenv,node_n_env,node_n_ci,node_n_tests toneRose
 
 ```text
 hevy-flow/
+├── .github/workflows/
+│   ├── ci.yml                # Automated tests & linting
+│   └── daily_sync.yml        # Daily API incremental sync
 ├── data/
-│   └── workouts.csv          # Raw Hevy export
+│   └── .last_sync            # Local state for incremental sync (runtime)
 ├── etl/
 │   ├── __init__.py
-│   ├── extract.py            # Phase 1: CSV extraction & validation
+│   ├── extract.py            # Phase 1: API pagination & flattening (or CSV fallback)
 │   ├── transform.py          # Phase 2: Cleaning & transformations
+│   ├── sync.py               # Incremental sync orchestrator
 │   └── load.py               # Phase 3: Supabase loader
 ├── dashboard.py              # Phase 4: Streamlit analytics dashboard
 ├── config.py                 # Centralized configuration
@@ -155,6 +159,7 @@ hevy-flow/
 
 - [Conda](https://docs.conda.io/en/latest/miniconda.html) (Miniconda or Anaconda)
 - A [Supabase](https://supabase.com/) project (free tier works)
+- A Hevy Pro account (for API access) - get your key at [hevy.com/settings?developer](https://hevy.com/settings?developer)
 
 ### 2. Installation
 
@@ -169,13 +174,20 @@ conda activate hevy-flow
 
 # Configure environment variables
 cp .env.example .env
-# Edit .env with your Supabase credentials
+# Edit .env with your Supabase DATABASE_URL and HEVY_API_KEY
 ```
 
 ### 3. Running the Data Pipeline
 
 ```bash
+# Incremental sync (fetches only new/updated workouts via API)
 python main.py
+
+# Full refresh (fetches all historical workouts via API)
+python main.py --mode full
+
+# Legacy CSV import
+python main.py --mode csv
 ```
 
 ### 4. Launching the Dashboard
