@@ -12,9 +12,10 @@ import plotly.graph_objects as go
 import psycopg2
 import streamlit as st
 
-from config import DATABASE_URL
+from config import DATABASE_URL, HEVY_API_KEY
 from etl.extract import extract_workouts
 from etl.load import load_to_supabase
+from etl.sync import run_incremental_sync
 from etl.transform import transform_workouts
 
 # ── Page Config ──────────────────────────────────────
@@ -340,6 +341,29 @@ def render_sidebar(workouts, sets):
             unsafe_allow_html=True,
         )
         st.divider()
+
+        # ── API Sync ────────────────────────────
+        if HEVY_API_KEY:
+            st.markdown(
+                '<div class="sidebar-section">⚡ Sync from Hevy</div>',
+                unsafe_allow_html=True,
+            )
+            if st.button("Sync from Hevy API", use_container_width=True, type="primary"):
+                with st.spinner("Syncing with Hevy API ..."):
+                    try:
+                        stats = run_incremental_sync()
+                        if stats["updated"] > 0 or stats["deleted"] > 0:
+                            st.success(
+                                f"Synced **{stats['updated']}** updated, "
+                                f"**{stats['deleted']}** deleted"
+                            )
+                        else:
+                            st.info("Already up to date — nothing new.")
+                        load_data.clear()
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(f"API sync failed: {exc}")
+            st.divider()
 
         # ── CSV Upload ───────────────────────────
         st.markdown('<div class="sidebar-section">Upload Workout Log</div>', unsafe_allow_html=True)
