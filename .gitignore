@@ -27,3 +27,6 @@ logs/
 .DS_Store
 Thumbs.db
 .coverage
+
+# ── Data ─────────────────────────────────────────────
+data/*.csv
