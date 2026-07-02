@@ -24,7 +24,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt || echo "No requirements.txt found, ignoring"
         # We also need to install the dev dependencies for tests
-        pip install pytest pytest-mock pytest-cov ruff pandas psycopg2-binary python-dotenv
+        pip install pytest pytest-mock pytest-cov ruff pandas psycopg2-binary python-dotenv requests requests-mock
         
     - name: Lint with Ruff
       run: |
