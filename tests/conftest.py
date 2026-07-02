@@ -65,3 +65,51 @@ def sample_clean_df():
             "workout_category": ["Legs", "Push", "Push"],
         }
     )
+
+
+@pytest.fixture
+def sample_api_response():
+    """Returns a realistic Hevy API workout response (nested JSON)."""
+    return [
+        {
+            "id": "b459cba5-cd6d-463c-abd6-54f8eafcadcb",
+            "title": "Push",
+            "start_time": "2024-05-26T10:00:00Z",
+            "end_time": "2024-05-26T11:15:00Z",
+            "description": None,
+            "exercises": [
+                {
+                    "title": "Bench Press (Barbell)",
+                    "supersets_id": None,
+                    "notes": None,
+                    "sets": [
+                        {
+                            "index": 0,
+                            "type": "normal",
+                            "weight_kg": 80.0,
+                            "reps": 10,
+                            "distance_meters": None,
+                            "duration_seconds": None,
+                            "rpe": 9.0,
+                        }
+                    ],
+                },
+                {
+                    "title": "Push Up",
+                    "supersets_id": None,
+                    "notes": None,
+                    "sets": [
+                        {
+                            "index": 0,
+                            "type": "normal",
+                            "weight_kg": None,
+                            "reps": 20,
+                            "distance_meters": None,
+                            "duration_seconds": None,
+                            "rpe": None,
+                        }
+                    ],
+                },
+            ],
+        }
+    ]
