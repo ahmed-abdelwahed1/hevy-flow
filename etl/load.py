@@ -3,9 +3,13 @@ Load phase of the Hevy-Flow ETL pipeline.
 
 Creates a normalized PostgreSQL schema in Supabase (workouts + workout_sets)
 and loads the cleaned DataFrame using direct SQL via psycopg2.
+
+Also manages the ``sync_metadata`` table used by the incremental sync
+workflow to track the last successful pull timestamp.
 """
 
 import logging
+from datetime import datetime, timezone
 
 import pandas as pd
 import psycopg2
@@ -15,11 +19,11 @@ from config import DATABASE_URL
 
 logger = logging.getLogger(__name__)
 
-# ── SQL DDL ──────────────────────────────────────────
+# ── SQL DDL ──────────────────────────────────────────────
 
 CREATE_WORKOUTS_TABLE = """
 CREATE TABLE IF NOT EXISTS workouts (
-    workout_id      VARCHAR(8) PRIMARY KEY,
+    workout_id      VARCHAR(36) PRIMARY KEY,
     title           TEXT NOT NULL,
     workout_category TEXT NOT NULL,
     start_time      TIMESTAMP NOT NULL,
@@ -35,7 +39,7 @@ CREATE TABLE IF NOT EXISTS workouts (
 CREATE_WORKOUT_SETS_TABLE = """
 CREATE TABLE IF NOT EXISTS workout_sets (
     id              SERIAL PRIMARY KEY,
-    workout_id      VARCHAR(8) NOT NULL REFERENCES workouts(workout_id) ON DELETE CASCADE,
+    workout_id      VARCHAR(36) NOT NULL REFERENCES workouts(workout_id) ON DELETE CASCADE,
     exercise_title  TEXT NOT NULL,
     superset_id     SMALLINT,
     set_index       SMALLINT NOT NULL,
@@ -57,6 +61,13 @@ CREATE INDEX IF NOT EXISTS idx_workout_sets_workout_id
 CREATE_EXERCISE_INDEX = """
 CREATE INDEX IF NOT EXISTS idx_workout_sets_exercise
     ON workout_sets(exercise_title);
+"""
+
+CREATE_SYNC_METADATA_TABLE = """
+CREATE TABLE IF NOT EXISTS sync_metadata (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 """
 
 # ── SQL DML ──────────────────────────────────────────
@@ -199,12 +210,36 @@ def load_to_supabase(df: pd.DataFrame, incremental: bool = False) -> dict:
 
 
 def _create_tables(cur) -> None:
-    """Create the workouts and workout_sets tables if they don't exist."""
+    """Create all tables and indexes if they don't exist."""
     cur.execute(CREATE_WORKOUTS_TABLE)
     cur.execute(CREATE_WORKOUT_SETS_TABLE)
     cur.execute(CREATE_SETS_INDEX)
     cur.execute(CREATE_EXERCISE_INDEX)
-    logger.info("Tables and indexes created (or already exist)")
+    cur.execute(CREATE_SYNC_METADATA_TABLE)
+    _migrate_workout_id_column(cur)
+    logger.info("Tables, indexes, and sync_metadata created (or already exist)")
+
+
+def _migrate_workout_id_column(cur) -> None:
+    """Widen workout_id from VARCHAR(8) to VARCHAR(36) if needed.
+
+    Alters the child table (workout_sets) first, then the parent
+    (workouts) to avoid FK constraint conflicts.  Idempotent — safe to
+    run on databases already at VARCHAR(36).
+    """
+    for table in ("workout_sets", "workouts"):
+        try:
+            cur.execute(
+                f"ALTER TABLE {table} ALTER COLUMN workout_id TYPE VARCHAR(36);"
+            )
+            logger.info("Migrated %s.workout_id to VARCHAR(36)", table)
+        except psycopg2.errors.DuplicateObject:  # noqa: E722
+            # Column is already the target type
+            pass
+        except Exception:
+            # If column is already VARCHAR(36), some PG versions just
+            # succeed silently.  Log and continue.
+            logger.debug("%s.workout_id migration skipped (already correct)", table)
 
 
 def _get_existing_workout_ids(cur) -> set:
@@ -345,3 +380,54 @@ def _insert_sets(cur, df_sets: pd.DataFrame) -> None:
 
     execute_values(cur, INSERT_SETS, values, page_size=500)
     logger.info("Inserted %d new workout sets (incremental)", len(values))
+
+
+# ── Sync metadata helpers ────────────────────────────
+
+
+def get_last_sync(cur) -> datetime | None:
+    """Read the ``last_sync_at`` timestamp from ``sync_metadata``.
+
+    Returns ``None`` if the key does not exist (first-ever run).
+    """
+    cur.execute(
+        "SELECT value FROM sync_metadata WHERE key = 'last_sync_at'"
+    )
+    row = cur.fetchone()
+    if row is None:
+        logger.info("No last_sync_at found — first run")
+        return None
+    ts = datetime.fromisoformat(row[0]).replace(tzinfo=timezone.utc)
+    logger.info("Last sync timestamp: %s", ts.isoformat())
+    return ts
+
+
+def set_last_sync(cur, ts: datetime) -> None:
+    """Write *ts* as the ``last_sync_at`` value in ``sync_metadata``."""
+    iso = ts.isoformat()
+    cur.execute(
+        """
+        INSERT INTO sync_metadata (key, value)
+        VALUES ('last_sync_at', %s)
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+        """,
+        (iso,),
+    )
+    logger.info("Updated last_sync_at to %s", iso)
+
+
+def delete_workouts(cur, workout_ids: list[str]) -> int:
+    """Delete workouts by ID.  FK cascade removes matching sets.
+
+    Returns the number of rows deleted.
+    """
+    if not workout_ids:
+        return 0
+    # Use ANY() for safe parameterized IN-list
+    cur.execute(
+        "DELETE FROM workouts WHERE workout_id = ANY(%s)",
+        (workout_ids,),
+    )
+    deleted = cur.rowcount
+    logger.info("Deleted %d workouts (and their sets via cascade)", deleted)
+    return deleted
