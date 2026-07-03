@@ -2,7 +2,7 @@ name: Daily Hevy Sync
 
 on:
   schedule:
-    - cron: '0 2 * * *'   # 02:00 UTC daily
+    - cron: '37 1 * * *'   # 01:37 UTC (4:37 AM Egypt Time) daily
   workflow_dispatch:        # manual trigger from Actions tab
 
 jobs:
