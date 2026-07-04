@@ -14,7 +14,7 @@
 
 <br/>
 
-Extracts workout logs directly from the [Hevy](https://www.hevyapp.com/) REST API (or CSV export), transforms and cleans the raw data, loads it into a **Supabase (PostgreSQL)** database, and presents insights through an interactive **Streamlit** dashboard. Includes daily automated incremental syncing via **GitHub Actions**.
+Extracts workout logs directly from the [Hevy](https://www.hevyapp.com/) REST API (or CSV export), transforms and cleans the raw data, loads it into a **Supabase (PostgreSQL)** database, and presents insights through an interactive **Streamlit** dashboard. Daily automated syncing is scheduled via **Supabase pg_cron**, which triggers a **GitHub Actions** workflow through the API for reliable, precise timing.
 
 ---
 
@@ -78,6 +78,16 @@ subgraph group_g_ops["Ops & config"]
   node_n_tests["tests<br/>test suite"]
 end
 
+subgraph group_g_sched["Scheduling"]
+  node_n_pgcron["pg_cron<br/>daily trigger<br/>[21:00 UTC]"]
+  node_n_pgnet(("pg_net<br/>HTTP client"))
+  node_n_daily["daily_sync<br/>workflow_dispatch<br/>[daily_sync.yml]"]
+end
+
+node_n_pgcron -->|"fires"| node_n_pgnet
+node_n_pgnet -->|"POST dispatches"| node_n_daily
+node_n_daily -->|"runs"| node_n_main
+
 node_n_raw_csv -->|"ingests"| node_n_extract
 node_n_main -.->|"runs"| node_n_extract
 node_n_main -.->|"runs"| node_n_transform
@@ -125,6 +135,7 @@ class node_n_raw_csv toneBlue
 class node_n_main,node_n_extract,node_n_transform,node_n_load,node_n_pandas,node_n_supabase toneAmber
 class node_n_dashboard,node_n_streamlit,node_n_plotly toneMint
 class node_n_config,node_n_dotenv,node_n_env,node_n_ci,node_n_tests toneRose
+class node_n_pgcron,node_n_pgnet,node_n_daily toneIndigo
 ```
 
 ## 📂 Project Structure
@@ -133,7 +144,7 @@ class node_n_config,node_n_dotenv,node_n_env,node_n_ci,node_n_tests toneRose
 hevy-flow/
 ├── .github/workflows/
 │   ├── ci.yml                # Automated tests & linting
-│   └── daily_sync.yml        # Daily API incremental sync
+│   └── daily_sync.yml        # Workflow dispatched by Supabase pg_cron
 ├── data/
 │   └── .last_sync            # Local state for incremental sync (runtime)
 ├── etl/
