@@ -17,3 +17,5 @@ dependencies:
       - pytest-mock==3.*
       - pytest-cov==5.*
       - ruff==0.4.*
+      - kaleido==0.2.*
+      - fpdf2==2.*
