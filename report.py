@@ -13,7 +13,7 @@ from datetime import datetime
 import pandas as pd
 from fpdf import FPDF
 
-from dashboard import (
+from charts import (
     SLATE_950,
     TEAL,
     build_category_donut,
