@@ -471,10 +471,8 @@ def render_kpis(workouts, sets):
     c6.metric("Avg RPE", f"{avg_rpe:.1f}" if not pd.isna(avg_rpe) else "—")
 
 
-def render_frequency(workouts):
-    """Weekly workout frequency."""
-    section("Workout Frequency")
-
+def build_frequency(workouts):
+    """Build weekly workout frequency figure."""
     weekly = (
         workouts.set_index("date")
         .resample("W-FRI")["workout_id"]
@@ -497,7 +495,78 @@ def render_frequency(workouts):
         )
     )
     fig.update_layout(**PLOTLY_LAYOUT, height=310, yaxis_title="Workouts / Week")
-    st.plotly_chart(fig, use_container_width=True)
+    return fig
+
+
+def render_frequency(workouts):
+    """Weekly workout frequency."""
+    section("Workout Frequency")
+    st.plotly_chart(build_frequency(workouts), use_container_width=True)
+
+
+def build_category_donut(workouts):
+    """Build sessions-by-category donut chart."""
+    cat_counts = workouts["workout_category"].value_counts().reset_index()
+    cat_counts.columns = ["category", "count"]
+    colors = [CATEGORY_COLORS.get(c, SLATE_400) for c in cat_counts["category"]]
+
+    fig = go.Figure(
+        go.Pie(
+            labels=cat_counts["category"],
+            values=cat_counts["count"],
+            hole=0.6,
+            marker=dict(colors=colors, line=dict(color=SLATE_950, width=2)),
+            textinfo="label+percent",
+            textfont=dict(size=11, color=SLATE_300),
+            hovertemplate="%{label}<br><b>%{value} sessions</b> (%{percent})<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        **PLOTLY_LAYOUT,
+        height=340,
+        showlegend=False,
+        title=dict(text="Sessions by Category", font=dict(size=13, color=SLATE_300)),
+        annotations=[
+            dict(
+                text=f"<b>{len(workouts)}</b><br>total",
+                x=0.5,
+                y=0.5,
+                font=dict(size=16, color=TEAL),
+                showarrow=False,
+            )
+        ],
+    )
+    return fig
+
+
+def build_category_volume(sets):
+    """Build total-volume-by-category horizontal bar chart."""
+    vol = sets.copy()
+    vol["volume"] = vol["weight_kg"] * vol["reps"]
+    by_cat = (
+        vol.groupby("workout_category")["volume"]
+        .sum()
+        .sort_values(ascending=True)
+        .reset_index()
+    )
+    colors = [CATEGORY_COLORS.get(c, SLATE_400) for c in by_cat["workout_category"]]
+
+    fig = go.Figure(
+        go.Bar(
+            x=by_cat["volume"],
+            y=by_cat["workout_category"],
+            orientation="h",
+            marker=dict(color=colors, cornerradius=5, line=dict(width=0)),
+            hovertemplate="%{y}<br><b>%{x:,.0f} kg</b><extra></extra>",
+        )
+    )
+    fig.update_layout(
+        **PLOTLY_LAYOUT,
+        height=340,
+        xaxis_title="Volume (kg)",
+        title=dict(text="Total Volume by Category", font=dict(size=13, color=SLATE_300)),
+    )
+    return fig
 
 
 def render_category_split(workouts, sets):
@@ -506,71 +575,14 @@ def render_category_split(workouts, sets):
     col1, col2 = st.columns(2)
 
     with col1:
-        cat_counts = workouts["workout_category"].value_counts().reset_index()
-        cat_counts.columns = ["category", "count"]
-        colors = [CATEGORY_COLORS.get(c, SLATE_400) for c in cat_counts["category"]]
-
-        fig = go.Figure(
-            go.Pie(
-                labels=cat_counts["category"],
-                values=cat_counts["count"],
-                hole=0.6,
-                marker=dict(colors=colors, line=dict(color=SLATE_950, width=2)),
-                textinfo="label+percent",
-                textfont=dict(size=11, color=SLATE_300),
-                hovertemplate="%{label}<br><b>%{value} sessions</b> (%{percent})<extra></extra>",
-            )
-        )
-        fig.update_layout(
-            **PLOTLY_LAYOUT,
-            height=340,
-            showlegend=False,
-            title=dict(text="Sessions by Category", font=dict(size=13, color=SLATE_300)),
-            annotations=[
-                dict(
-                    text=f"<b>{len(workouts)}</b><br>total",
-                    x=0.5,
-                    y=0.5,
-                    font=dict(size=16, color=TEAL),
-                    showarrow=False,
-                )
-            ],
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(build_category_donut(workouts), use_container_width=True)
 
     with col2:
-        vol = sets.copy()
-        vol["volume"] = vol["weight_kg"] * vol["reps"]
-        by_cat = (
-            vol.groupby("workout_category")["volume"]
-            .sum()
-            .sort_values(ascending=True)
-            .reset_index()
-        )
-        colors = [CATEGORY_COLORS.get(c, SLATE_400) for c in by_cat["workout_category"]]
-
-        fig = go.Figure(
-            go.Bar(
-                x=by_cat["volume"],
-                y=by_cat["workout_category"],
-                orientation="h",
-                marker=dict(color=colors, cornerradius=5, line=dict(width=0)),
-                hovertemplate="%{y}<br><b>%{x:,.0f} kg</b><extra></extra>",
-            )
-        )
-        fig.update_layout(
-            **PLOTLY_LAYOUT,
-            height=340,
-            xaxis_title="Volume (kg)",
-            title=dict(text="Total Volume by Category", font=dict(size=13, color=SLATE_300)),
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(build_category_volume(sets), use_container_width=True)
 
 
-def render_volume_timeline(sets):
-    """Stacked volume per session over time."""
-    section("Volume Over Time")
-
+def build_volume_timeline(sets):
+    """Build stacked volume per session over time figure."""
     vol = sets.copy()
     vol["volume"] = vol["weight_kg"] * vol["reps"]
     session_vol = (
@@ -595,13 +607,17 @@ def render_volume_timeline(sets):
         )
 
     fig.update_layout(**PLOTLY_LAYOUT, barmode="stack", height=360, yaxis_title="Volume (kg)")
-    st.plotly_chart(fig, use_container_width=True)
+    return fig
 
 
-def render_strength(sets, exercise):
-    """Strength progression chart."""
-    section("Strength Progression")
+def render_volume_timeline(sets):
+    """Stacked volume per session over time."""
+    section("Volume Over Time")
+    st.plotly_chart(build_volume_timeline(sets), use_container_width=True)
 
+
+def build_strength(sets, exercise):
+    """Build strength progression figure. Returns (fig, subtitle) or (None, None)."""
     if exercise == "All Exercises":
         top = (
             sets.assign(v=sets["weight_kg"] * sets["reps"])
@@ -618,8 +634,7 @@ def render_strength(sets, exercise):
         subtitle = exercise
 
     if data.empty:
-        st.info("No data for the selected exercise.")
-        return
+        return None, None
 
     prog = (
         data.groupby(["date", "exercise_title"])["weight_kg"]
@@ -644,7 +659,6 @@ def render_strength(sets, exercise):
                 hovertemplate="%{x|%b %d, %Y}<br><b>%{y:.1f} kg</b><extra></extra>",
             )
         )
-    st.caption(subtitle)
 
     fig.update_layout(
         **PLOTLY_LAYOUT,
@@ -663,11 +677,22 @@ def render_strength(sets, exercise):
             bgcolor="rgba(0,0,0,0)",
         ),
     )
+    return fig, subtitle
+
+
+def render_strength(sets, exercise):
+    """Strength progression chart."""
+    section("Strength Progression")
+    fig, subtitle = build_strength(sets, exercise)
+    if fig is None:
+        st.info("No data for the selected exercise.")
+        return
+    st.caption(subtitle)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_day_of_week(workouts):
-    """Day-of-week bar chart."""
+def build_day_of_week(workouts):
+    """Build day-of-week bar chart figure."""
     day_order = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
     day_short = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"]
     counts = workouts["day_of_week"].value_counts().reindex(day_order, fill_value=0)
@@ -692,15 +717,19 @@ def render_day_of_week(workouts):
         title=dict(text="Training Days", font=dict(size=13, color=SLATE_300)),
         yaxis_title="Count",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    return fig
 
 
-def render_rpe(sets):
-    """RPE trend over time."""
+def render_day_of_week(workouts):
+    """Day-of-week bar chart."""
+    st.plotly_chart(build_day_of_week(workouts), use_container_width=True)
+
+
+def build_rpe(sets):
+    """Build RPE trend figure. Returns fig or None if no RPE data."""
     rpe_data = sets.dropna(subset=["rpe"])
     if rpe_data.empty:
-        st.info("No RPE data available.")
-        return
+        return None
 
     avg = rpe_data.groupby("date")["rpe"].mean().reset_index().sort_values("date")
 
@@ -724,11 +753,20 @@ def render_rpe(sets):
         yaxis_title="RPE",
     )
     fig.update_yaxes(range=[5, 10])
+    return fig
+
+
+def render_rpe(sets):
+    """RPE trend over time."""
+    fig = build_rpe(sets)
+    if fig is None:
+        st.info("No RPE data available.")
+        return
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_top_exercises(sets):
-    """Top 10 exercises horizontal bar."""
+def build_top_exercises(sets):
+    """Build top-10 exercises horizontal bar figure."""
     top = (
         sets.groupby("exercise_title")
         .agg(total_sets=("id", "count"), avg_weight=("weight_kg", "mean"))
@@ -755,17 +793,22 @@ def render_top_exercises(sets):
             customdata=top["avg_weight"],
         )
     )
-    st.caption("Top 10 Exercises")
     fig.update_layout(
         **PLOTLY_LAYOUT,
         height=400,
         xaxis_title="Total Sets",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    return fig
 
 
-def render_duration(workouts):
-    """Session duration scatter + rolling average."""
+def render_top_exercises(sets):
+    """Top 10 exercises horizontal bar."""
+    st.caption("Top 10 Exercises")
+    st.plotly_chart(build_top_exercises(sets), use_container_width=True)
+
+
+def build_duration(workouts):
+    """Build session duration scatter + rolling average figure."""
     data = workouts[["date", "duration_minutes", "workout_category"]].sort_values("date")
     colors = [CATEGORY_COLORS.get(c, SLATE_400) for c in data["workout_category"]]
 
@@ -799,8 +842,6 @@ def render_duration(workouts):
             )
         )
 
-    st.caption("Session Duration")
-
     fig.update_layout(
         **PLOTLY_LAYOUT,
         height=400,
@@ -818,7 +859,13 @@ def render_duration(workouts):
             bgcolor="rgba(0,0,0,0)",
         ),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    return fig
+
+
+def render_duration(workouts):
+    """Session duration scatter + rolling average."""
+    st.caption("Session Duration")
+    st.plotly_chart(build_duration(workouts), use_container_width=True)
 
 
 # ── Main ─────────────────────────────────────────────
