@@ -103,14 +103,14 @@ def generate_report(
     date_min = workouts["date"].min().strftime("%b %d, %Y") if not workouts.empty else "—"
     date_max = workouts["date"].max().strftime("%b %d, %Y") if not workouts.empty else "—"
 
-    # ── PAGE 1: Header + KPIs + Frequency ────────────
+    # ── PAGE 1: Header + KPIs + Frequency + Training Days + Dist ──
     _add_dark_page(pdf)
 
     # Title
     pdf.set_y(MARGIN)
     pdf.set_text_color(TEXT_R, TEXT_G, TEXT_B)
     pdf.set_font("Helvetica", "B", 22)
-    pdf.cell(0, 12, "Hevy Flow Report", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 10, "Hevy Flow Report", new_x="LMARGIN", new_y="NEXT")
 
     # Subtitle with date range
     pdf.set_text_color(148, 163, 184)  # SLATE_400
@@ -122,7 +122,7 @@ def generate_report(
         new_x="LMARGIN",
         new_y="NEXT",
     )
-    pdf.ln(6)
+    pdf.ln(4)
 
     # KPI boxes
     kpis = [
@@ -152,49 +152,53 @@ def generate_report(
         pdf.set_font("Helvetica", "B", 11)
         pdf.cell(kpi_w, 8, value, align="C")
 
-    pdf.set_y(kpi_y + 24)
+    pdf.set_y(kpi_y + 26)
 
-    # Frequency chart
+    # Frequency chart (Full width)
     _heading(pdf, "Workout Frequency")
-    freq_png = _fig_to_png(build_frequency(workouts), width=1000, height=380)
+    freq_png = _fig_to_png(build_frequency(workouts), width=1000, height=280)
     _place_image(pdf, freq_png, MARGIN, pdf.get_y(), CONTENT_W)
 
-    # ── PAGE 2: Day-of-Week + RPE, Category Split ────
-    _add_dark_page(pdf)
-    pdf.set_y(MARGIN)
+    pdf.set_y(pdf.get_y() + 54)
+    pdf.ln(2)
 
+    # Training Days & RPE (Half width each)
     _heading(pdf, "Training Days & RPE")
     chart_y = pdf.get_y()
-
-    dow_png = _fig_to_png(build_day_of_week(workouts), width=550, height=380)
+    
+    dow_png = _fig_to_png(build_day_of_week(workouts), width=500, height=320)
     _place_image(pdf, dow_png, MARGIN, chart_y, HALF_W)
-
+    
     rpe_fig = build_rpe(sets)
     if rpe_fig is not None:
-        rpe_png = _fig_to_png(rpe_fig, width=550, height=380)
+        rpe_png = _fig_to_png(rpe_fig, width=500, height=320)
         _place_image(pdf, rpe_png, MARGIN + HALF_W + 4, chart_y, HALF_W)
 
-    pdf.set_y(chart_y + 80)
-    pdf.ln(4)
+    pdf.set_y(chart_y + 60)
+    pdf.ln(2)
+
+    # Workout Distribution (Half width each)
     _heading(pdf, "Workout Distribution")
     cat_y = pdf.get_y()
 
-    donut_png = _fig_to_png(build_category_donut(workouts), width=550, height=420)
+    donut_png = _fig_to_png(build_category_donut(workouts), width=500, height=340)
     _place_image(pdf, donut_png, MARGIN, cat_y, HALF_W)
 
-    vol_cat_png = _fig_to_png(build_category_volume(sets), width=550, height=420)
+    vol_cat_png = _fig_to_png(build_category_volume(sets), width=500, height=340)
     _place_image(pdf, vol_cat_png, MARGIN + HALF_W + 4, cat_y, HALF_W)
 
-    # ── PAGE 3: Volume Timeline + Strength ───────────
+
+    # ── PAGE 2: Volume Timeline + Strength + Top Ex + Duration ───
     _add_dark_page(pdf)
     pdf.set_y(MARGIN)
 
+    # Volume Over Time
     _heading(pdf, "Volume Over Time")
-    vol_png = _fig_to_png(build_volume_timeline(sets), width=1000, height=400)
+    vol_png = _fig_to_png(build_volume_timeline(sets), width=1000, height=340)
     _place_image(pdf, vol_png, MARGIN, pdf.get_y(), CONTENT_W)
 
-    pdf.set_y(pdf.get_y() + 80)
-    pdf.ln(4)
+    pdf.set_y(pdf.get_y() + 65)
+    pdf.ln(2)
     _heading(pdf, "Strength Progression")
 
     strength_fig, subtitle = build_strength(sets, selected_ex)
@@ -203,24 +207,23 @@ def generate_report(
             pdf.set_text_color(148, 163, 184)
             pdf.set_font("Helvetica", "I", 8)
             pdf.cell(0, 5, subtitle, new_x="LMARGIN", new_y="NEXT")
-        str_png = _fig_to_png(strength_fig, width=1000, height=440)
+        str_png = _fig_to_png(strength_fig, width=1000, height=340)
         _place_image(pdf, str_png, MARGIN, pdf.get_y(), CONTENT_W)
+        pdf.set_y(pdf.get_y() + 65)
     else:
         pdf.set_text_color(148, 163, 184)
         pdf.set_font("Helvetica", "I", 9)
         pdf.cell(0, 6, "No data for the selected exercise.", new_x="LMARGIN", new_y="NEXT")
-
-    # ── PAGE 4: Top Exercises + Duration, Footer ─────
-    _add_dark_page(pdf)
-    pdf.set_y(MARGIN)
-
+        pdf.set_y(pdf.get_y() + 6)
+        
+    pdf.ln(2)
     _heading(pdf, "Top Exercises & Session Duration")
     chart_y = pdf.get_y()
 
-    top_png = _fig_to_png(build_top_exercises(sets), width=550, height=480)
+    top_png = _fig_to_png(build_top_exercises(sets), width=500, height=400)
     _place_image(pdf, top_png, MARGIN, chart_y, HALF_W)
 
-    dur_png = _fig_to_png(build_duration(workouts), width=550, height=480)
+    dur_png = _fig_to_png(build_duration(workouts), width=500, height=400)
     _place_image(pdf, dur_png, MARGIN + HALF_W + 4, chart_y, HALF_W)
 
     # Footer
