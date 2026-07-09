@@ -17,6 +17,7 @@ from etl.extract import extract_workouts
 from etl.load import load_to_supabase
 from etl.sync import run_incremental_sync
 from etl.transform import transform_workouts
+from report import generate_report
 
 # ── Page Config ──────────────────────────────────────
 
@@ -441,6 +442,24 @@ def render_sidebar(workouts, sets):
             f"</div>",
             unsafe_allow_html=True,
         )
+
+        st.divider()
+
+        # PDF Export
+        st.markdown(
+            '<div class="sidebar-section">📄 Export Report</div>',
+            unsafe_allow_html=True,
+        )
+        if st.button("Download PDF Report", use_container_width=True):
+            with st.spinner("Generating PDF report ..."):
+                pdf_bytes = generate_report(workouts, sets, selected_ex)
+            st.download_button(
+                label="💾 Save PDF",
+                data=pdf_bytes,
+                file_name="hevy_flow_report.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
 
     return workouts, sets, selected_ex
 
