@@ -14,7 +14,7 @@
 
 <br/>
 
-Extracts workout logs directly from the [Hevy](https://www.hevyapp.com/) REST API (or CSV export), transforms and cleans the raw data, loads it into a **Supabase (PostgreSQL)** database, and presents insights through an interactive **Streamlit** dashboard. Daily automated syncing is scheduled via **Supabase pg_cron**, which triggers a **GitHub Actions** workflow through the API for reliable, precise timing.
+Extracts workout logs directly from the [Hevy](https://www.hevyapp.com/) REST API (or CSV export), transforms and cleans the raw data, loads it into a **Supabase (PostgreSQL)** database, and presents insights through an interactive **Streamlit** dashboard with a built-in **PDF Report** generator. Daily automated syncing is scheduled via **Supabase pg_cron**, which triggers a **GitHub Actions** workflow through the API for reliable, precise timing.
 
 ---
 
@@ -27,6 +27,7 @@ Extracts workout logs directly from the [Hevy](https://www.hevyapp.com/) REST AP
 * **Database:** Supabase (PostgreSQL)
 * **DB Adapter:** `psycopg2-binary`
 * **Visualization:** Streamlit & Plotly Express/Graph Objects
+* **PDF Export:** `fpdf2` and `kaleido` for dynamic A4 report generation
 * **Config Management:** `python-dotenv`
 
 ---
@@ -66,6 +67,8 @@ end
 
 subgraph group_g_app["Analytics UI"]
   node_n_dashboard["dashboard<br/>streamlit app<br/>[dashboard.py]"]
+  node_n_charts["charts<br/>visualizations<br/>[charts.py]"]
+  node_n_report["report<br/>pdf generator<br/>[report.py]"]
   node_n_streamlit(("Streamlit<br/>ui runtime"))
   node_n_plotly(("Plotly<br/>charting"))
 end
@@ -99,7 +102,10 @@ node_n_transform -->|"produces"| node_n_load
 node_n_load -->|"writes"| node_n_supabase
 node_n_dashboard -->|"reads"| node_n_supabase
 node_n_dashboard -->|"built on"| node_n_streamlit
-node_n_dashboard -->|"charts with"| node_n_plotly
+node_n_dashboard -->|"uses"| node_n_charts
+node_n_dashboard -->|"generates"| node_n_report
+node_n_charts -->|"charts with"| node_n_plotly
+node_n_report -->|"charts with"| node_n_plotly
 node_n_config -.->|"configures"| node_n_extract
 node_n_config -.->|"configures"| node_n_load
 node_n_config -.->|"configures"| node_n_dashboard
@@ -120,6 +126,8 @@ click node_n_extract "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/e
 click node_n_transform "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/etl/transform.py"
 click node_n_load "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/etl/load.py"
 click node_n_dashboard "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/dashboard.py"
+click node_n_charts "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/charts.py"
+click node_n_report "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/report.py"
 click node_n_config "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/config.py"
 click node_n_env "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/environment.yml"
 click node_n_ci "https://github.com/ahmed-abdelwahed1/hevy-flow/blob/main/.github/workflows/ci.yml"
@@ -133,7 +141,7 @@ classDef toneIndigo fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81
 classDef toneTeal fill:#ccfbf1,stroke:#0f766e,stroke-width:1.5px,color:#134e4a
 class node_n_raw_csv toneBlue
 class node_n_main,node_n_extract,node_n_transform,node_n_load,node_n_pandas,node_n_supabase toneAmber
-class node_n_dashboard,node_n_streamlit,node_n_plotly toneMint
+class node_n_dashboard,node_n_charts,node_n_report,node_n_streamlit,node_n_plotly toneMint
 class node_n_config,node_n_dotenv,node_n_env,node_n_ci,node_n_tests toneRose
 class node_n_pgcron,node_n_pgnet,node_n_daily toneIndigo
 ```
@@ -154,6 +162,8 @@ hevy-flow/
 │   ├── sync.py               # Incremental sync orchestrator
 │   └── load.py               # Phase 3: Supabase loader
 ├── dashboard.py              # Phase 4: Streamlit analytics dashboard
+├── charts.py                 # Shared Plotly visualization builders
+├── report.py                 # A4 PDF report generator
 ├── config.py                 # Centralized configuration
 ├── main.py                   # Pipeline entry point
 ├── environment.yml           # Conda environment
