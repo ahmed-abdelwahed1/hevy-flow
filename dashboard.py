@@ -477,7 +477,7 @@ def render_frequency(workouts):
 
     weekly = (
         workouts.set_index("date")
-        .resample("W")["workout_id"]
+        .resample("W-FRI")["workout_id"]
         .count()
         .reset_index()
         .rename(columns={"workout_id": "count"})
@@ -668,8 +668,8 @@ def render_strength(sets, exercise):
 
 def render_day_of_week(workouts):
     """Day-of-week bar chart."""
-    day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    day_short = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    day_order = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+    day_short = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"]
     counts = workouts["day_of_week"].value_counts().reindex(day_order, fill_value=0)
     max_val = counts.max()
 
