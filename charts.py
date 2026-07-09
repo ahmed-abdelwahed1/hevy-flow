@@ -151,10 +151,7 @@ def build_category_volume(sets):
     vol = sets.copy()
     vol["volume"] = vol["weight_kg"] * vol["reps"]
     by_cat = (
-        vol.groupby("workout_category")["volume"]
-        .sum()
-        .sort_values(ascending=True)
-        .reset_index()
+        vol.groupby("workout_category")["volume"].sum().sort_values(ascending=True).reset_index()
     )
     colors = [CATEGORY_COLORS.get(c, SLATE_400) for c in by_cat["workout_category"]]
 

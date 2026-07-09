@@ -14,8 +14,6 @@ import pandas as pd
 from fpdf import FPDF
 
 from charts import (
-    SLATE_950,
-    TEAL,
     build_category_donut,
     build_category_volume,
     build_day_of_week,
@@ -165,10 +163,10 @@ def generate_report(
     # Training Days & RPE (Half width each)
     _heading(pdf, "Training Days & RPE")
     chart_y = pdf.get_y()
-    
+
     dow_png = _fig_to_png(build_day_of_week(workouts), width=500, height=320)
     _place_image(pdf, dow_png, MARGIN, chart_y, HALF_W)
-    
+
     rpe_fig = build_rpe(sets)
     if rpe_fig is not None:
         rpe_png = _fig_to_png(rpe_fig, width=500, height=320)
@@ -186,7 +184,6 @@ def generate_report(
 
     vol_cat_png = _fig_to_png(build_category_volume(sets), width=500, height=340)
     _place_image(pdf, vol_cat_png, MARGIN + HALF_W + 4, cat_y, HALF_W)
-
 
     # ── PAGE 2: Volume Timeline + Strength + Top Ex + Duration ───
     _add_dark_page(pdf)
@@ -215,7 +212,7 @@ def generate_report(
         pdf.set_font("Helvetica", "I", 9)
         pdf.cell(0, 6, "No data for the selected exercise.", new_x="LMARGIN", new_y="NEXT")
         pdf.set_y(pdf.get_y() + 6)
-        
+
     pdf.ln(2)
     _heading(pdf, "Top Exercises & Session Duration")
     chart_y = pdf.get_y()
